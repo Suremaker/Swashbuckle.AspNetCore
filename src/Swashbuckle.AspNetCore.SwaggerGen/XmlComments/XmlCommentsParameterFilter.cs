@@ -6,11 +6,16 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
 {
     public class XmlCommentsParameterFilter : IParameterFilter
     {
-        private XPathNavigator _xmlNavigator;
+        private readonly XmlMemberResolver _xmlMemberResolver;
 
         public XmlCommentsParameterFilter(XPathDocument xmlDoc)
+            : this(new XmlMemberResolver(xmlDoc.CreateNavigator()))
         {
-            _xmlNavigator = xmlDoc.CreateNavigator();
+        }
+
+        public XmlCommentsParameterFilter(XmlMemberResolver xmlMemberResolver)
+        {
+            _xmlMemberResolver = xmlMemberResolver;
         }
 
         public void Apply(OpenApiParameter parameter, ParameterFilterContext context)
@@ -28,7 +33,7 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
         private void ApplyPropertyTags(OpenApiParameter parameter, ParameterFilterContext context)
         {
             var propertyMemberName = XmlCommentsNodeNameHelper.GetMemberNameForFieldOrProperty(context.PropertyInfo);
-            var propertyNode = _xmlNavigator.SelectSingleNode($"/doc/members/member[@name='{propertyMemberName}']");
+            var propertyNode = _xmlMemberResolver.ResolveMember(propertyMemberName);
 
             if (propertyNode == null) return;
 
@@ -61,8 +66,7 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
             if (targetMethod == null) return;
 
             var methodMemberName = XmlCommentsNodeNameHelper.GetMemberNameForMethod(targetMethod);
-            var paramNode = _xmlNavigator.SelectSingleNode(
-                $"/doc/members/member[@name='{methodMemberName}']/param[@name='{context.ParameterInfo.Name}']");
+            var paramNode = _xmlMemberResolver.ResolveMember(methodMemberName)?.SelectSingleNode($"param[@name='{context.ParameterInfo.Name}']");
 
             if (paramNode != null)
             {

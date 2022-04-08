@@ -6,11 +6,16 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
 {
     public class XmlCommentsSchemaFilter : ISchemaFilter
     {
-        private readonly XPathNavigator _xmlNavigator;
+        private readonly XmlMemberResolver _xmlMemberResolver;
 
         public XmlCommentsSchemaFilter(XPathDocument xmlDoc)
+            :this(new XmlMemberResolver(xmlDoc.CreateNavigator()))
         {
-            _xmlNavigator = xmlDoc.CreateNavigator();
+        }
+
+        public XmlCommentsSchemaFilter(XmlMemberResolver xmlMemberResolver)
+        {
+            _xmlMemberResolver = xmlMemberResolver;
         }
 
         public void Apply(OpenApiSchema schema, SchemaFilterContext context)
@@ -26,7 +31,7 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
         private void ApplyTypeTags(OpenApiSchema schema, Type type)
         {
             var typeMemberName = XmlCommentsNodeNameHelper.GetMemberNameForType(type);
-            var typeSummaryNode = _xmlNavigator.SelectSingleNode($"/doc/members/member[@name='{typeMemberName}']/summary");
+            var typeSummaryNode = _xmlMemberResolver.ResolveMember(typeMemberName)?.SelectSingleNode("summary");
 
             if (typeSummaryNode != null)
             {
@@ -37,7 +42,7 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
         private void ApplyMemberTags(OpenApiSchema schema, SchemaFilterContext context)
         {
             var fieldOrPropertyMemberName = XmlCommentsNodeNameHelper.GetMemberNameForFieldOrProperty(context.MemberInfo);
-            var fieldOrPropertyNode = _xmlNavigator.SelectSingleNode($"/doc/members/member[@name='{fieldOrPropertyMemberName}']");
+            var fieldOrPropertyNode = _xmlMemberResolver.ResolveMember(fieldOrPropertyMemberName);
 
             if (fieldOrPropertyNode == null) return;
 

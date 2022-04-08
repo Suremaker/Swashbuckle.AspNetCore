@@ -9,14 +9,18 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
 {
     public class XmlCommentsDocumentFilter : IDocumentFilter
     {
-        private const string MemberXPath = "/doc/members/member[@name='{0}']";
         private const string SummaryTag = "summary";
 
-        private readonly XPathNavigator _xmlNavigator;
+        private readonly XmlMemberResolver _xmlMemberResolver;
 
         public XmlCommentsDocumentFilter(XPathDocument xmlDoc)
+            : this(new XmlMemberResolver(xmlDoc.CreateNavigator()))
         {
-            _xmlNavigator = xmlDoc.CreateNavigator();
+        }
+
+        public XmlCommentsDocumentFilter(XmlMemberResolver xmlMemberResolver)
+        {
+            _xmlMemberResolver = xmlMemberResolver;
         }
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -31,7 +35,7 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
             foreach (var nameAndType in controllerNamesAndTypes)
             {
                 var memberName = XmlCommentsNodeNameHelper.GetMemberNameForType(nameAndType.Value);
-                var typeNode = _xmlNavigator.SelectSingleNode(string.Format(MemberXPath, memberName));
+                var typeNode = _xmlMemberResolver.ResolveMember(memberName);
 
                 if (typeNode != null)
                 {

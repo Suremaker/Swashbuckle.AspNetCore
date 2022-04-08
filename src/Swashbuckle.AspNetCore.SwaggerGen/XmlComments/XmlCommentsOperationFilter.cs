@@ -7,11 +7,16 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
 {
     public class XmlCommentsOperationFilter : IOperationFilter
     {
-        private readonly XPathNavigator _xmlNavigator;
+        private readonly XmlMemberResolver _xmlMemberResolver;
 
         public XmlCommentsOperationFilter(XPathDocument xmlDoc)
+            : this(new XmlMemberResolver(xmlDoc.CreateNavigator()))
         {
-            _xmlNavigator = xmlDoc.CreateNavigator();
+        }
+
+        public XmlCommentsOperationFilter(XmlMemberResolver xmlMemberResolver)
+        {
+            _xmlMemberResolver = xmlMemberResolver;
         }
 
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
@@ -32,14 +37,17 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
         private void ApplyControllerTags(OpenApiOperation operation, Type controllerType)
         {
             var typeMemberName = XmlCommentsNodeNameHelper.GetMemberNameForType(controllerType);
-            var responseNodes = _xmlNavigator.Select($"/doc/members/member[@name='{typeMemberName}']/response");
+            var responseNodes = _xmlMemberResolver.ResolveMember(typeMemberName)?.Select("response");
+
+            if (responseNodes == null) return;
+
             ApplyResponseTags(operation, responseNodes);
         }
 
         private void ApplyMethodTags(OpenApiOperation operation, MethodInfo methodInfo)
         {
             var methodMemberName = XmlCommentsNodeNameHelper.GetMemberNameForMethod(methodInfo);
-            var methodNode = _xmlNavigator.SelectSingleNode($"/doc/members/member[@name='{methodMemberName}']");
+            var methodNode = _xmlMemberResolver.ResolveMember(methodMemberName);
 
             if (methodNode == null) return;
 

@@ -412,14 +412,14 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<XPathDocument> xmlDocFactory,
             bool includeControllerXmlComments = false)
         {
-            var xmlDoc = xmlDocFactory();
-            swaggerGenOptions.ParameterFilter<XmlCommentsParameterFilter>(xmlDoc);
-            swaggerGenOptions.RequestBodyFilter<XmlCommentsRequestBodyFilter>(xmlDoc);
-            swaggerGenOptions.OperationFilter<XmlCommentsOperationFilter>(xmlDoc);
-            swaggerGenOptions.SchemaFilter<XmlCommentsSchemaFilter>(xmlDoc);
+            var xmlMemberResolver = new XmlMemberResolver(xmlDocFactory());
+            swaggerGenOptions.ParameterFilter<XmlCommentsParameterFilter>(xmlMemberResolver);
+            swaggerGenOptions.RequestBodyFilter<XmlCommentsRequestBodyFilter>(xmlMemberResolver);
+            swaggerGenOptions.OperationFilter<XmlCommentsOperationFilter>(xmlMemberResolver);
+            swaggerGenOptions.SchemaFilter<XmlCommentsSchemaFilter>(xmlMemberResolver);
 
             if (includeControllerXmlComments)
-                swaggerGenOptions.DocumentFilter<XmlCommentsDocumentFilter>(xmlDoc);
+                swaggerGenOptions.DocumentFilter<XmlCommentsDocumentFilter>(xmlMemberResolver);
         }
 
         /// <summary>
