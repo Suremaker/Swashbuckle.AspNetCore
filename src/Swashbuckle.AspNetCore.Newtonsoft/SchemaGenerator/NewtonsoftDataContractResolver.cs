@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -13,6 +14,7 @@ namespace Swashbuckle.AspNetCore.Newtonsoft
     {
         private readonly JsonSerializerSettings _serializerSettings;
         private readonly IContractResolver _contractResolver;
+        private readonly ConcurrentDictionary<Type, DataContract> _contracts = new();
 
         public NewtonsoftDataContractResolver(JsonSerializerSettings serializerSettings)
         {
@@ -20,7 +22,9 @@ namespace Swashbuckle.AspNetCore.Newtonsoft
             _contractResolver = serializerSettings.ContractResolver ?? new DefaultContractResolver();
         }
 
-        public DataContract GetDataContractForType(Type type)
+        public DataContract GetDataContractForType(Type type) => _contracts.GetOrAdd(type, CreateDataContractForType);
+
+        private DataContract CreateDataContractForType(Type type)
         {
             if (type.IsOneOf(typeof(object), typeof(JToken), typeof(JObject), typeof(JArray)))
             {

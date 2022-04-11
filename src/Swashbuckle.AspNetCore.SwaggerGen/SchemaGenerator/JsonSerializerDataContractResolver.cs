@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,13 +12,16 @@ namespace Swashbuckle.AspNetCore.SwaggerGen
     public class JsonSerializerDataContractResolver : ISerializerDataContractResolver
     {
         private readonly JsonSerializerOptions _serializerOptions;
+        private readonly ConcurrentDictionary<Type, DataContract> _contracts = new();
 
         public JsonSerializerDataContractResolver(JsonSerializerOptions serializerOptions)
         {
             _serializerOptions = serializerOptions;
         }
 
-        public DataContract GetDataContractForType(Type type)
+        public DataContract GetDataContractForType(Type type) => _contracts.GetOrAdd(type, CreateDataContractForType);
+
+        private DataContract CreateDataContractForType(Type type)
         {
             if (type.IsOneOf(typeof(object), typeof(JsonDocument), typeof(JsonElement)))
             {
