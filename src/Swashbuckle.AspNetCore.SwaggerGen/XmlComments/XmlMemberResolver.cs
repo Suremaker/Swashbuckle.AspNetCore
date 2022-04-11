@@ -1,22 +1,26 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Collections.Generic;
 using System.Xml.XPath;
 
 namespace Swashbuckle.AspNetCore.SwaggerGen
 {
     public class XmlMemberResolver
     {
-        private readonly XPathNavigator _xmlNavigator;
-        private readonly ConcurrentDictionary<string, XPathNavigator> _memberCache = new();
+        private readonly Dictionary<string, XPathNavigator> _members = new();
 
         public XmlMemberResolver(IXPathNavigable xPathNavigable)
         {
-            _xmlNavigator = xPathNavigable.CreateNavigator();
+            var iterator = xPathNavigable.CreateNavigator().Select("/doc/members/member");
+            while (iterator.MoveNext())
+            {
+                var current = iterator.Current.CreateNavigator();
+                _members[current.GetAttribute("name", "")] = current;
+            }
+
         }
 
         public XPathNavigator ResolveMember(string memberName)
         {
-            var path = $"/doc/members/member[@name='{memberName}']";
-            return _memberCache.GetOrAdd(path, _xmlNavigator.SelectSingleNode);
+            return _members.TryGetValue(memberName, out var navigator) ? navigator : null;
         }
     }
 }
